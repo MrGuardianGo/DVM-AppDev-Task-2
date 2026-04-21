@@ -12,6 +12,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "expo": {
+      "newArchEnabled": true,
+      "android": {
+        "newArchEnabled": true
+      },
+      "ios": {
+        "newArchEnabled": true
+      }
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -20,10 +29,19 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.onemanhitparade.DVMT2JS"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "36c6bec6-426e-4990-8075-f53473d82248"
+      }
     }
   }
 }
