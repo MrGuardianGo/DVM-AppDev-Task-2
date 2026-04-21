@@ -11,6 +11,7 @@ import {
   ImageBackground,
   StatusBar,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
@@ -182,13 +183,6 @@ export default function App() {
               onPress={() => setIsFilterOpen(true)}
             >
               <Ionicons name="filter" size={20} color="#fff" />
-              {filters.length > 0 && (
-                <Animated.View style={styles.bookmaskBadge}>
-                  <Animated.Text style={styles.bookmaskBadgeText}>
-                    {filters.length}
-                  </Animated.Text>
-                </Animated.View>
-              )}
             </TouchableOpacity>
           </View>
 
