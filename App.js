@@ -24,7 +24,6 @@ import ChosenFilter from "./components/ChosenFilter";
 import SkeletonCard from "./components/SkeletonCard";
 
 const BASE_URL = "https://recruitments.bits-dvm.org";
-const HEADER_IMAGE = require("./assets/header-image.jpg");
 const BG_IMAGE = require("./assets/background.png");
 
 export default function App() {
@@ -202,20 +201,39 @@ export default function App() {
             </View>
           )}
 
-          {isLoading ? (
+          {!isBookmarksOpen &&
+            (isLoading ? (
+              <FlatList
+                data={[1, 2, 3]}
+                keyExtractor={(item) => item.toString()}
+                contentContainerStyle={styles.list}
+                renderItem={() => <SkeletonCard />}
+              />
+            ) : hasError ? (
+              <Text style={styles.emptyText}>
+                Something went wrong fetching events.
+              </Text>
+            ) : (
+              <FlatList
+                data={events}
+                keyExtractor={(item) => String(item.id)}
+                contentContainerStyle={styles.list}
+                ListEmptyComponent={
+                  <Text style={styles.emptyText}>No events found :(</Text>
+                }
+                renderItem={({ item }) => (
+                  <EventCard
+                    event={item}
+                    bookmarks={bookmarks}
+                    addBookmark={addBookmark}
+                  />
+                )}
+              />
+            ))}
+
+          {isBookmarksOpen && (
             <FlatList
-              data={[1, 2, 3]}
-              keyExtractor={(item) => item}
-              contentContainerStyle={styles.list}
-              renderItem={() => <SkeletonCard />}
-            />
-          ) : hasError ? (
-            <Text style={styles.emptyText}>
-              Something went wrong fetching events.
-            </Text>
-          ) : (
-            <FlatList
-              data={events}
+              data={bookmarkedEvents}
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={styles.list}
               ListEmptyComponent={
@@ -277,7 +295,7 @@ export default function App() {
             </View>
           </Modal>
 
-          <Modal
+          {/* <Modal
             visible={isBookmarksOpen}
             animationType="slide"
             transparent
@@ -311,7 +329,7 @@ export default function App() {
                 )}
               </ScrollView>
             </View>
-          </Modal>
+          </Modal> */}
         </ImageBackground>
       </SafeAreaView>
     </SafeAreaProvider>
