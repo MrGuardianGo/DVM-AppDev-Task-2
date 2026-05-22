@@ -10,6 +10,8 @@ import {
   StyleSheet,
   ImageBackground,
   StatusBar,
+  Image,
+  Animated,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
@@ -23,6 +25,10 @@ import SkeletonCard from "./components/SkeletonCard";
 
 const BASE_URL = "https://recruitments.bits-dvm.org";
 const BG_IMAGE = require("./assets/background.png");
+const DAY_0 = require("./assets/day0.png");
+const DAY_1 = require("./assets/day1.png");
+const DAY_2 = require("./assets/day2.png");
+const DAY_3 = require("./assets/day3.png");
 
 export default function App() {
   const [loaded] = useFonts({
@@ -223,32 +229,19 @@ export default function App() {
                   {allDays.map((day) => {
                     const isActive = selectedDay === day;
                     return (
-                      <TouchableOpacity
-                        key={day}
-                        style={[
-                          styles.daySquare,
-                          isActive && styles.daySquareActive,
-                        ]}
-                        onPress={() => handleDayPress(day)}
-                        activeOpacity={0.75}
-                      >
-                        <Text
+                      <Animated.View>
+                        <TouchableOpacity
+                          key={day}
                           style={[
-                            styles.daySquareLabel,
-                            isActive && styles.daySquareLabelActive,
+                            styles.daySquare,
+                            isActive && styles.daySquareActive,
                           ]}
+                          onPress={() => handleDayPress(day)}
+                          activeOpacity={0.75}
                         >
-                          Day
-                        </Text>
-                        <Text
-                          style={[
-                            styles.daySquareNum,
-                            isActive && styles.daySquareNumActive,
-                          ]}
-                        >
-                          {day}
-                        </Text>
-                      </TouchableOpacity>
+                          <Image source={DAY_0} />
+                        </TouchableOpacity>
+                      </Animated.View>
                     );
                   })}
                 </ScrollView>
@@ -448,16 +441,17 @@ const styles = StyleSheet.create({
 
   daySidebar: {
     width: 58,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 8,
+    // paddingTop: 8,
+    // paddingBottom: 8,
+    // paddingLeft: 8,
   },
+
   daySidebarContent: {
-    gap: 10,
+    // gap: 10,
     alignItems: "center",
   },
   daySquare: {
-    width: 46,
+    width: 86,
     height: 46,
     borderRadius: 10,
     backgroundColor: "rgba(255,255,255,0.12)",
@@ -465,6 +459,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.18)",
+    marginTop: 20,
+    marginBottom: 30,
   },
   daySquareActive: {
     backgroundColor: "#f5b301",
