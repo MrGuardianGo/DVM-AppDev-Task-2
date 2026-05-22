@@ -1,7 +1,7 @@
 {
   "name": "dvmt2js",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -12,7 +12,7 @@
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "axios": "^1.15.0",
-    "expo": "~54.0.33",
+    "expo": "~54.0.34",
     "expo-constants": "~18.0.13",
     "expo-font": "~14.0.11",
     "expo-linear-gradient": "^15.0.8",

@@ -10,8 +10,6 @@ import {
   StyleSheet,
   ImageBackground,
   StatusBar,
-  ActivityIndicator,
-  Animated,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
@@ -39,6 +37,8 @@ export default function App() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [categories, setCategories] = useState([]);
+  const [allDays, setAllDays] = useState([]);
+  const [selectedDay, setSelectedDay] = useState(null);
   const [filters, setFilters] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setErrorFlag] = useState(false);
@@ -55,7 +55,11 @@ export default function App() {
       try {
         const res = await axios.get(`${BASE_URL}/events`);
         const uniqueCategories = [...new Set(res.data.map((e) => e.category))];
+        const uniqueDays = [...new Set(res.data.map((e) => e.day))].sort(
+          (a, b) => a - b,
+        );
         setCategories(uniqueCategories);
+        setAllDays(uniqueDays);
       } catch (err) {
         console.error("Failed to load categories", err);
       }
@@ -74,14 +78,13 @@ export default function App() {
       if (debouncedSearch) params.append("q", debouncedSearch);
       const activeCategory = filters.find((f) => categories.includes(f));
       if (activeCategory) params.append("category", activeCategory);
-      const dayFilter = filters.find((f) => !isNaN(f));
-      if (dayFilter) params.append("day", dayFilter);
+
+      if (selectedDay !== null) params.append("day", selectedDay);
 
       const response = await axios.get(url + params.toString());
       let data = response.data;
-      if (filters.includes("Day")) {
-        data.sort((a, b) => a.day - b.day);
-      } else if (filters.includes("Registrations")) {
+
+      if (filters.includes("Registrations")) {
         data.sort((a, b) => b.registrations - a.registrations);
       }
 
@@ -92,7 +95,7 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearch, filters, categories]);
+  }, [debouncedSearch, filters, categories, selectedDay]);
 
   useEffect(() => {
     fetchEvents();
@@ -109,7 +112,7 @@ export default function App() {
   }, [bookmarks]);
 
   function chooseFilter(filterName) {
-    const sortFilters = ["Day", "Registrations"];
+    const sortFilters = ["Registrations"];
     setFilters((prev) => {
       let updated = [...prev];
       if (sortFilters.includes(filterName)) {
@@ -133,6 +136,10 @@ export default function App() {
     .map((id) => events.find((e) => e.id === id))
     .filter(Boolean);
 
+  function handleDayPress(day) {
+    setSelectedDay((prev) => (prev === day ? null : day));
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safe}>
@@ -142,13 +149,18 @@ export default function App() {
           style={styles.bgImage}
         >
           <StatusBar barStyle="light-content" />
+
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Events</Text>
             <TouchableOpacity
               style={styles.bookmarkHeaderBtn}
-              onPress={() => setIsBookmarksOpen(true)}
+              onPress={() => setIsBookmarksOpen((v) => !v)}
             >
-              <Ionicons name="bookmark" size={20} color="#fff" />
+              <Ionicons
+                name={isBookmarksOpen ? "bookmark" : "bookmark-outline"}
+                size={20}
+                color="#fff"
+              />
               {bookmarks.length > 0 && (
                 <View style={styles.bookmaskBadge}>
                   <Text style={styles.bookmaskBadgeText}>
@@ -201,53 +213,98 @@ export default function App() {
             </View>
           )}
 
-          {!isBookmarksOpen &&
-            (isLoading ? (
-              <FlatList
-                data={[1, 2, 3]}
-                keyExtractor={(item) => item.toString()}
-                contentContainerStyle={styles.list}
-                renderItem={() => <SkeletonCard />}
-              />
-            ) : hasError ? (
-              <Text style={styles.emptyText}>
-                Something went wrong fetching events.
-              </Text>
-            ) : (
-              <FlatList
-                data={events}
-                keyExtractor={(item) => String(item.id)}
-                contentContainerStyle={styles.list}
-                ListEmptyComponent={
-                  <Text style={styles.emptyText}>No events found :(</Text>
-                }
-                renderItem={({ item }) => (
-                  <EventCard
-                    event={item}
-                    bookmarks={bookmarks}
-                    addBookmark={addBookmark}
-                  />
-                )}
-              />
-            ))}
+          <View style={styles.contentRow}>
+            {allDays.length > 0 && (
+              <View style={styles.daySidebar}>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.daySidebarContent}
+                >
+                  {allDays.map((day) => {
+                    const isActive = selectedDay === day;
+                    return (
+                      <TouchableOpacity
+                        key={day}
+                        style={[
+                          styles.daySquare,
+                          isActive && styles.daySquareActive,
+                        ]}
+                        onPress={() => handleDayPress(day)}
+                        activeOpacity={0.75}
+                      >
+                        <Text
+                          style={[
+                            styles.daySquareLabel,
+                            isActive && styles.daySquareLabelActive,
+                          ]}
+                        >
+                          Day
+                        </Text>
+                        <Text
+                          style={[
+                            styles.daySquareNum,
+                            isActive && styles.daySquareNumActive,
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
 
-          {isBookmarksOpen && (
-            <FlatList
-              data={bookmarkedEvents}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={styles.list}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>No events found :(</Text>
-              }
-              renderItem={({ item }) => (
-                <EventCard
-                  event={item}
-                  bookmarks={bookmarks}
-                  addBookmark={addBookmark}
+            <View style={styles.listWrapper}>
+              {!isBookmarksOpen &&
+                (isLoading ? (
+                  <FlatList
+                    data={[1, 2, 3]}
+                    keyExtractor={(item) => item.toString()}
+                    contentContainerStyle={styles.list}
+                    renderItem={() => <SkeletonCard />}
+                  />
+                ) : hasError ? (
+                  <Text style={styles.emptyText}>
+                    Something went wrong fetching events.
+                  </Text>
+                ) : (
+                  <FlatList
+                    data={events}
+                    keyExtractor={(item) => String(item.id)}
+                    contentContainerStyle={styles.list}
+                    ListEmptyComponent={
+                      <Text style={styles.emptyText}>No events found :(</Text>
+                    }
+                    renderItem={({ item }) => (
+                      <EventCard
+                        event={item}
+                        bookmarks={bookmarks}
+                        addBookmark={addBookmark}
+                      />
+                    )}
+                  />
+                ))}
+
+              {isBookmarksOpen && (
+                <FlatList
+                  data={bookmarkedEvents}
+                  keyExtractor={(item) => String(item.id)}
+                  contentContainerStyle={styles.list}
+                  ListEmptyComponent={
+                    <Text style={styles.emptyText}>No bookmarks yet.</Text>
+                  }
+                  renderItem={({ item }) => (
+                    <EventCard
+                      event={item}
+                      bookmarks={bookmarks}
+                      addBookmark={addBookmark}
+                    />
+                  )}
                 />
               )}
-            />
-          )}
+            </View>
+          </View>
 
           <Modal
             visible={isFilterOpen}
@@ -278,7 +335,6 @@ export default function App() {
                   />
                 ))}
                 <Text style={styles.filterLabel}>Sort by</Text>
-                <FilterOption filterName="Day" chooseFilter={chooseFilter} />
                 <FilterOption
                   filterName="Registrations"
                   chooseFilter={chooseFilter}
@@ -294,42 +350,6 @@ export default function App() {
               )}
             </View>
           </Modal>
-
-          {/* <Modal
-            visible={isBookmarksOpen}
-            animationType="slide"
-            transparent
-            onRequestClose={() => setIsBookmarksOpen(false)}
-          >
-            <TouchableOpacity
-              style={styles.backdrop}
-              activeOpacity={1}
-              onPress={() => setIsBookmarksOpen(false)}
-            />
-            <View style={styles.drawerPanel}>
-              <View style={styles.drawerHandle} />
-              <View style={styles.drawerHeader}>
-                <Text style={styles.drawerTitle}>Bookmarks</Text>
-                <TouchableOpacity onPress={() => setIsBookmarksOpen(false)}>
-                  <Ionicons name="close" size={24} color="#333" />
-                </TouchableOpacity>
-              </View>
-              <ScrollView contentContainerStyle={styles.bookmarkContent}>
-                {bookmarkedEvents.length === 0 ? (
-                  <Text style={styles.emptyText}>No bookmarks yet.</Text>
-                ) : (
-                  bookmarkedEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      bookmarks={bookmarks}
-                      addBookmark={addBookmark}
-                    />
-                  ))
-                )}
-              </ScrollView>
-            </View>
-          </Modal> */}
         </ImageBackground>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -350,19 +370,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerImage: {
-    resizeMode: "cover",
-  },
-  headerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
   headerTitle: {
     fontFamily: "MilordBook",
     fontSize: 50,
     color: "#fff",
     paddingTop: 10,
-    // letterSpacing: 1,
   },
   bookmarkHeaderBtn: {
     position: "absolute",
@@ -372,18 +384,29 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 12,
     padding: 10,
-    // borderWidth: 1,
-    // borderColor: "rgba(255, 255, 255, 0.3)",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
     justifyContent: "center",
     alignItems: "center",
+  },
+  bookmaskBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#dcdcdc",
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  bookmaskBadgeText: {
+    color: "#2d2d2d",
+    fontSize: 10,
+    fontWeight: "700",
   },
   searchRow: {
     flexDirection: "row",
@@ -413,31 +436,67 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 7,
   },
-  bookmaskBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#dcdcdc",
-    borderRadius: 8,
-    width: 16,
-    height: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  bookmaskBadgeText: {
-    color: "#2d2d2d",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-
   filtersRow: {
     paddingHorizontal: 12,
     marginBottom: 4,
   },
 
+  contentRow: {
+    flex: 1,
+    flexDirection: "row",
+  },
+
+  daySidebar: {
+    width: 58,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 8,
+  },
+  daySidebarContent: {
+    gap: 10,
+    alignItems: "center",
+  },
+  daySquare: {
+    width: 46,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  daySquareActive: {
+    backgroundColor: "#f5b301",
+    borderColor: "#f5b301",
+  },
+  daySquareLabel: {
+    fontSize: 9,
+    color: "rgba(255,255,255,0.7)",
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  daySquareLabelActive: {
+    color: "#1a1a1a",
+  },
+  daySquareNum: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "800",
+    lineHeight: 18,
+  },
+  daySquareNumActive: {
+    color: "#1a1a1a",
+  },
+
+  listWrapper: {
+    flex: 1,
+  },
   list: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingBottom: 20,
+    paddingTop: 8,
   },
   emptyText: {
     textAlign: "center",
@@ -445,6 +504,7 @@ const styles = StyleSheet.create({
     color: "#888",
     fontSize: 15,
   },
+
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -509,8 +569,5 @@ const styles = StyleSheet.create({
     color: "#e53935",
     fontWeight: "600",
     fontSize: 15,
-  },
-  bookmarkContent: {
-    paddingVertical: 8,
   },
 });

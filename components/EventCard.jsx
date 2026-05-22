@@ -1,58 +1,65 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-const BASE_URL = "https://recruitments.bits-dvm.org";
+import { useRouter } from "expo-router";
 
 function EventCard({ event, addBookmark, bookmarks = [] }) {
   const { id, name, category, day, time, venue, registrations } = event;
   const [bookmarked, setBookmarked] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setBookmarked(bookmarks.includes(id));
   }, [bookmarks, id]);
 
-  const toggleBookmark = (eventId) => {
-    addBookmark(eventId);
-    setBookmarked(!bookmarked);
-  };
+  function toggleBookmark(e) {
+    e.stopPropagation?.();
+    addBookmark(id);
+    setBookmarked((prev) => !prev);
+  }
 
-  const imageUri = `${BASE_URL}/events/${id}/image`;
+  function handlePress() {
+    router.push({
+      pathname: "/event/[id]",
+      params: {
+        id,
+        name,
+        category,
+        day,
+        time,
+        venue,
+        registrations,
+      },
+    });
+  }
 
   return (
-    <View style={styles.card}>
-      <Image
-        source={{
-          uri: imageUri,
-        }}
-        style={styles.image}
-        resizeMode="cover"
-      />
-
-      <TouchableOpacity
-        style={styles.bookmarkBtn}
-        onPress={() => toggleBookmark(id)}
-      >
-        <View style={styles.iconCircle}>
-          <Ionicons
-            name={bookmarked ? "bookmark" : "bookmark-outline"}
-            size={20}
-            color={bookmarked ? "#f5b301" : "#fff"}
-          />
+    <TouchableOpacity
+      style={styles.card}
+      onPress={handlePress}
+      activeOpacity={0.88}
+    >
+      <View style={styles.body}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={2}>
+            {name}
+          </Text>
+          <TouchableOpacity
+            style={styles.bookmarkBtn}
+            onPress={toggleBookmark}
+            hitSlop={10}
+          >
+            <Ionicons
+              name={bookmarked ? "bookmark" : "bookmark-outline"}
+              size={20}
+              color={bookmarked ? "#f5b301" : "#bbb"}
+            />
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
-
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{name}</Text>
 
         <View style={styles.details}>
           <View style={styles.row}>
-            <Ionicons name="pricetag-outline" size={14} color="#f5b301" />
-            <Text style={styles.detail}> {category}</Text>
-          </View>
-
-          <View style={styles.row}>
-            <Ionicons name="calendar-outline" size={14} color="#888" />
+            <Ionicons name="calendar-outline" size={13} color="#888" />
             <Text style={styles.detail}>
               {" "}
               Day {day} • {time}
@@ -60,68 +67,91 @@ function EventCard({ event, addBookmark, bookmarks = [] }) {
           </View>
 
           <View style={styles.row}>
-            <Ionicons name="location-outline" size={14} color="#888" />
+            <Ionicons name="location-outline" size={13} color="#888" />
             <Text style={styles.detail}> {venue}</Text>
           </View>
 
           <View style={styles.row}>
-            <Ionicons name="people-outline" size={14} color="#888" />
+            <Ionicons name="people-outline" size={13} color="#888" />
             <Text style={styles.detail}> {registrations} registered</Text>
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
-    borderRadius: 15,
-    marginBottom: 16,
-    overflow: "hidden", // Ensures image corners follow card radius
+    borderRadius: 14,
+    marginBottom: 12,
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    flexDirection: "row",
+    alignItems: "center",
   },
-  image: {
-    width: "100%",
-    height: 160,
-    backgroundColor: "#eee", // Fallback color while loading
+  categoryPill: {
+    width: 36,
+    alignSelf: "stretch",
+    backgroundColor: "#1a1a1a",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 14,
+    gap: 6,
+    flexDirection: "column",
   },
-  bookmarkBtn: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    zIndex: 2,
+  categoryText: {
+    fontSize: 9,
+    color: "rgba(255,255,255,0.75)",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    writingDirection: "ltr",
+    transform: [{ rotate: "90deg" }],
+    width: 60,
+    textAlign: "center",
+    marginTop: 4,
   },
-  iconCircle: {
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 8,
-    borderRadius: 20,
+  body: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
   },
-  textContainer: {
-    padding: 16,
-  },
-  title: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#1a1a1a",
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
+  title: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    lineHeight: 21,
+  },
+  bookmarkBtn: {
+    marginLeft: 8,
+    marginTop: 1,
+  },
   details: {
-    gap: 6,
+    gap: 5,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
   },
   detail: {
-    fontSize: 14,
-    color: "#555",
+    fontSize: 13,
+    color: "#666",
     fontWeight: "500",
+  },
+  chevron: {
+    paddingRight: 10,
   },
 });
 
