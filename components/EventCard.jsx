@@ -1,29 +1,88 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ImageBackground,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 const TEAR = require("../assets/tear.png");
+const GRIDTILE = require("../assets/grid-tile.png");
 
-function NoteBookBG() {
-  const horizontalLines = Array.from({ length: 13 });
-  const verticalLines = Array.from({ length: 22 });
+// function NoteBookBG({ width, height }) {
+//   if (!width || !height) return null;
+
+//   const LINE_SPACING = 15;
+//   const horizontalCount = Math.floor(height / LINE_SPACING);
+
+//   // FIXED: Calculate vertical lines relative to the space available *after* the red line margins
+//   const START_OFFSET = 50;
+//   const verticalCount = Math.floor((width - START_OFFSET) / LINE_SPACING);
+
+//   const horizontalLines = Array.from({ length: horizontalCount });
+//   const verticalLines = Array.from({ length: verticalCount });
+
+//   return (
+//     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+//       {/* Horizontal Lines */}
+//       <View style={styles.gridOverlay}>
+//         {horizontalLines.map((_, index) => (
+//           <View
+//             key={`horizontal-${index}`}
+//             style={[
+//               styles.horizontalLine,
+//               { position: "absolute", top: index * LINE_SPACING },
+//             ]}
+//           />
+//         ))}
+//       </View>
+
+//       <View style={styles.gridOverlay}>
+//         {verticalLines.map((_, index) => (
+//           <View
+//             key={`vertical-${index}`}
+//             style={[
+//               styles.verticalLine,
+//               {
+//                 position: "absolute",
+//                 left: START_OFFSET + index * LINE_SPACING,
+//               },
+//             ]}
+//           />
+//         ))}
+//       </View>
+
+//       <View style={styles.redLine} />
+//     </View>
+//   );
+// }
+
+function PunchHoles({ cardHeight }) {
+  if (!cardHeight) return null;
+
+  const HOLE_SIZE = 20;
+  const GAP = 26;
+  const TOP_PADDING = 10;
+  const BOTTOM_PADDING = 10;
+
+  const availableHeight = cardHeight - TOP_PADDING - BOTTOM_PADDING;
+
+  const count = Math.max(
+    1,
+    Math.floor((availableHeight + GAP) / (HOLE_SIZE + GAP)),
+  );
+
+  const holes = Array.from({ length: count });
 
   return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      <View style={styles.gridOverlay}>
-        {horizontalLines.map((_, index) => (
-          <View key={`horizontal-${index}`} style={styles.horizontalLine} />
-        ))}
-      </View>
-
-      <View style={[styles.gridOverlay, { flexDirection: "row" }]}>
-        {verticalLines.map((_, index) => (
-          <View key={`vertical-${index}`} style={styles.verticalLine} />
-        ))}
-      </View>
-
-      <View style={styles.redLine} />
+    <View style={styles.punchHolesContainer} pointerEvents="none">
+      {holes.map((_, index) => (
+        <View key={`hole-${index}`} style={styles.punchHole} />
+      ))}
     </View>
   );
 }
@@ -31,6 +90,8 @@ function NoteBookBG() {
 function EventCard({ event, addBookmark, bookmarks = [] }) {
   const { id, name, category, day, time, venue, registrations } = event;
   const [bookmarked, setBookmarked] = useState(false);
+  const [cardDimensions, setCardDimensions] = useState({ width: 0, height: 0 });
+
   const router = useRouter();
 
   useEffect(() => {
@@ -46,32 +107,42 @@ function EventCard({ event, addBookmark, bookmarks = [] }) {
   function handlePress() {
     router.push({
       pathname: "/event/[id]",
-      params: {
-        id,
-        name,
-        category,
-        day,
-        time,
-        venue,
-        registrations,
-      },
+      params: { id, name, category, day, time, venue, registrations },
     });
   }
 
   return (
     <View style={styles.outerContainer}>
+      <Image
+        style={styles.paperclip}
+        source={require("../assets/paperclip.png")}
+      />
       <TouchableOpacity
         style={styles.card}
         onPress={handlePress}
         activeOpacity={0.88}
       >
-        <NoteBookBG />
+        <View style={styles.redLine} />
+        <PunchHoles cardHeight={cardDimensions.height} />
 
-        <View style={styles.body}>
+        <ImageBackground
+          source={GRIDTILE}
+          resizeMode="repeat"
+          resizeMethod="scale"
+          style={styles.repeatingImage}
+        />
+        <View
+          style={styles.body}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            setCardDimensions({ width, height });
+          }}
+        >
           <View style={styles.titleRow}>
             <Text style={styles.title} numberOfLines={2}>
               {name}
             </Text>
+
             <TouchableOpacity
               style={styles.bookmarkBtn}
               onPress={toggleBookmark}
@@ -80,11 +151,10 @@ function EventCard({ event, addBookmark, bookmarks = [] }) {
               <Ionicons
                 name={bookmarked ? "bookmark" : "bookmark-outline"}
                 size={20}
-                color={bookmarked ? "#1a1a1a" : "#1a1a1a"}
+                color="#1a1a1a"
               />
             </TouchableOpacity>
           </View>
-
           <View style={styles.details}>
             <View style={styles.row}>
               <Ionicons name="calendar-outline" size={13} color="#1a1a1a" />
@@ -116,10 +186,49 @@ const styles = StyleSheet.create({
   outerContainer: {
     marginBottom: 12,
   },
+  paperclip: {
+    zIndex: 5,
+    position: "absolute",
+    top: -10,
+    left: 45,
+  },
   tearImage: {
     width: "100%",
     marginTop: -10,
-    zIndex: 2,
+    zIndex: 5,
+  },
+  repeatingImage: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 1000,
+    height: 1000,
+    opacity: 1,
+  },
+  redLine: {
+    position: "absolute",
+    left: 51,
+    top: 0,
+    bottom: 0,
+    width: 1.5,
+    backgroundColor: "#FF7BAC",
+    opacity: 0.6,
+    zIndex: 3,
+  },
+  punchHolesContainer: {
+    flexDirection: "column",
+    gap: 26,
+    position: "absolute",
+    zIndex: 3,
+    top: 10,
+    left: 10,
+    paddingTop: 6,
+  },
+  punchHole: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#161616",
   },
   card: {
     backgroundColor: "#F8EBAA",
@@ -129,14 +238,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
-    flexDirection: "row",
-    alignItems: "center",
     position: "relative",
   },
   gridOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: "space-between",
-    opacity: 0.25,
+    opacity: 0.2,
   },
   horizontalLine: {
     width: "100%",
@@ -148,18 +254,9 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: "#76BFC7",
   },
-  redLine: {
-    position: "absolute",
-    left: 32,
-    top: 0,
-    bottom: 0,
-    width: 1.5,
-    backgroundColor: "#FF7BAC",
-    opacity: 0.6,
-  },
   body: {
     flex: 1,
-    paddingLeft: 38,
+    paddingLeft: 78,
     paddingRight: 16,
     paddingVertical: 18,
     zIndex: 1,
@@ -174,6 +271,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "800",
     color: "#1a1a1a",
+    fontFamily: "Futurbdcn",
   },
   bookmarkBtn: {
     marginLeft: 8,

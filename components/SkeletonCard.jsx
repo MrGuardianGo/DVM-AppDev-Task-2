@@ -1,82 +1,175 @@
-import React, { useEffect, useRef } from "react";
-import { View, StyleSheet, Animated, Easing } from "react-native";
+import { useEffect, useRef } from "react";
+import { View, StyleSheet, Image, Animated } from "react-native";
 
-const SkeletonCard = () => {
-  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+const TEAR = require("../assets/tear.png");
+
+export function SkeletonCard() {
+  const fadeAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    const sharedAnimation = Animated.sequence([
-      Animated.timing(pulseAnim, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
-      }),
-      Animated.timing(pulseAnim, {
-        toValue: 0.3,
-        duration: 800,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]);
-
-    Animated.loop(sharedAnimation).start();
-  }, [pulseAnim]);
-
-  const animatedStyle = { opacity: pulseAnim };
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [fadeAnim]);
 
   return (
-    <View style={styles.card}>
-      <Animated.View style={[styles.imagePlaceholder, animatedStyle]} />
+    <View style={styles.outerContainer}>
+      <Image
+        style={styles.paperclip}
+        source={require("../assets/paperclip.png")}
+      />
 
-      <View style={styles.textContainer}>
-        <Animated.View style={[styles.titlePlaceholder, animatedStyle]} />
+      <View style={styles.card}>
+        <View style={styles.redLine} />
 
-        <View style={styles.details}>
-          {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={styles.row}>
-              <Animated.View style={[styles.iconPlaceholder, animatedStyle]} />
+        <View style={styles.punchHolesContainer} pointerEvents="none">
+          <View style={styles.punchHole} />
+          <View style={styles.punchHole} />
+          <View style={styles.punchHole} />
+        </View>
+
+        <View style={styles.body}>
+          <View style={styles.titleRow}>
+            <Animated.View
+              style={[styles.skeletonTitle, { opacity: fadeAnim }]}
+            />
+            <View style={styles.skeletonBookmark} />
+          </View>
+
+          <View style={[styles.titleRow, { marginTop: -4, marginBottom: 16 }]}>
+            <Animated.View
+              style={[styles.skeletonTitleShort, { opacity: fadeAnim }]}
+            />
+          </View>
+
+          <View style={styles.details}>
+            <View style={styles.row}>
+              <View style={styles.skeletonIcon} />
               <Animated.View
                 style={[
-                  styles.detailPlaceholder,
-                  animatedStyle,
-                  { width: i % 2 === 0 ? "60%" : "45%" },
+                  styles.skeletonDetailText,
+                  { width: "55%", opacity: fadeAnim },
                 ]}
               />
             </View>
-          ))}
+
+            <View style={styles.row}>
+              <View style={styles.skeletonIcon} />
+              <Animated.View
+                style={[
+                  styles.skeletonDetailText,
+                  { width: "40%", opacity: fadeAnim },
+                ]}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <View style={styles.skeletonIcon} />
+              <Animated.View
+                style={[
+                  styles.skeletonDetailText,
+                  { width: "45%", opacity: fadeAnim },
+                ]}
+              />
+            </View>
+          </View>
         </View>
       </View>
+
+      <Image source={TEAR} style={styles.tearImage} />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    marginBottom: 16,
-    overflow: "hidden",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  imagePlaceholder: {
-    width: "100%",
-    height: 160,
-    backgroundColor: "#e1e1e1",
-  },
-  textContainer: {
-    padding: 16,
-  },
-  titlePlaceholder: {
-    width: "70%",
-    height: 22,
-    backgroundColor: "#e1e1e1",
-    borderRadius: 4,
+  outerContainer: {
     marginBottom: 12,
+  },
+  paperclip: {
+    zIndex: 5,
+    position: "absolute",
+    top: -10,
+    left: 45,
+  },
+  tearImage: {
+    width: "100%",
+    marginTop: -10,
+    zIndex: 5,
+  },
+  redLine: {
+    position: "absolute",
+    left: 51,
+    top: 0,
+    bottom: 0,
+    width: 1.5,
+    backgroundColor: "#FF7BAC",
+    opacity: 0.3,
+    zIndex: 3,
+  },
+  punchHolesContainer: {
+    flexDirection: "column",
+    gap: 26,
+    position: "absolute",
+    zIndex: 3,
+    top: 10,
+    left: 10,
+    paddingTop: 6,
+  },
+  punchHole: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#161616",
+  },
+  card: {
+    backgroundColor: "#F8EBAA",
+    overflow: "hidden",
+    position: "relative",
+    minHeight: 140,
+  },
+  body: {
+    flex: 1,
+    paddingLeft: 78,
+    paddingRight: 16,
+    paddingVertical: 18,
+    zIndex: 1,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  skeletonTitle: {
+    flex: 1,
+    height: 26,
+    backgroundColor: "#e3d69c",
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  skeletonTitleShort: {
+    width: "60%",
+    height: 26,
+    backgroundColor: "#e3d69c",
+    borderRadius: 4,
+  },
+  skeletonBookmark: {
+    width: 20,
+    height: 20,
+    backgroundColor: "#e3d69c",
+    borderRadius: 4,
+    marginLeft: 8,
+    marginTop: 4,
   },
   details: {
     gap: 10,
@@ -85,17 +178,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  iconPlaceholder: {
-    width: 14,
-    height: 14,
-    backgroundColor: "#e1e1e1",
-    borderRadius: 7,
-    marginRight: 8,
+  skeletonIcon: {
+    width: 13,
+    height: 13,
+    backgroundColor: "#e3d69c",
+    borderRadius: 3,
+    marginRight: 6,
   },
-  detailPlaceholder: {
-    height: 12,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 4,
+  skeletonDetailText: {
+    height: 14,
+    backgroundColor: "#e3d69c",
+    borderRadius: 3,
   },
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   StyleSheet,
   ImageBackground,
   StatusBar,
+  Image,
+  Animated,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
@@ -20,13 +22,40 @@ import EventCard from "./components/EventCard";
 import FilterOption from "./components/FilterOption";
 import ChosenFilter from "./components/ChosenFilter";
 import SkeletonCard from "./components/SkeletonCard";
-
 const BASE_URL = "https://recruitments.bits-dvm.org";
 const BG_IMAGE = require("./assets/background.png");
+
+function DaySidebarButton({ day, isActive, onPress }) {
+  const widthAnim = useRef(new Animated.Value(86)).current;
+
+  useEffect(() => {
+    Animated.timing(widthAnim, {
+      toValue: isActive ? 110 : 86,
+      duration: 150,
+      useNativeDriver: false,
+    }).start();
+  }, [isActive]);
+
+  return (
+    <View style={styles.buttonContainer}>
+      <Animated.View style={[styles.shadowView, { width: widthAnim }]} />
+
+      <TouchableOpacity onPress={onPress} activeOpacity={0.75}>
+        <Animated.View style={[styles.daySquare, { width: widthAnim }]}>
+          <Text style={styles.daySquareLabel}>
+            Day{"\n"}
+            <Text style={{ fontSize: 40 }}>{day}</Text>
+          </Text>
+        </Animated.View>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export default function App() {
   const [loaded] = useFonts({
     MilordBook: require("./assets/fonts/MilordBook.ttf"),
+    Futurbdcn: require("./assets/fonts/futurbdcn.ttf"),
   });
   const [events, setEvents] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
@@ -136,10 +165,6 @@ export default function App() {
     .map((id) => events.find((e) => e.id === id))
     .filter(Boolean);
 
-  function handleDayPress(day) {
-    setSelectedDay((prev) => (prev === day ? null : day));
-  }
-
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safe}>
@@ -223,33 +248,37 @@ export default function App() {
                   {allDays.map((day) => {
                     const isActive = selectedDay === day;
                     return (
-                      <TouchableOpacity
+                      <DaySidebarButton
                         key={day}
-                        style={[
-                          styles.daySquare,
-                          isActive && styles.daySquareActive,
-                        ]}
-                        onPress={() => handleDayPress(day)}
-                        activeOpacity={0.75}
-                      >
-                        <Text
-                          style={[
-                            styles.daySquareLabel,
-                            isActive && styles.daySquareLabelActive,
-                          ]}
-                        >
-                          Day
-                        </Text>
-                        <Text
-                          style={[
-                            styles.daySquareNum,
-                            isActive && styles.daySquareNumActive,
-                          ]}
-                        >
-                          {day}
-                        </Text>
-                      </TouchableOpacity>
+                        day={day}
+                        isActive={isActive}
+                        onPress={() =>
+                          setSelectedDay((prev) => (prev === day ? null : day))
+                        }
+                      />
                     );
+                    /* <View key={day} style={styles.buttonContainer}>
+                        <View
+                          style={[
+                            styles.shadowView,
+                            isActive && styles.shadowViewActive,
+                          ]}
+                        />
+
+                        <TouchableOpacity
+                          style={[
+                            styles.daySquare,
+                            isActive && styles.daySquareActive,
+                          ]}
+                          onPress={() => handleDayPress(day)}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={styles.daySquareLabel}>
+                            Day{"\n"}
+                            <Text style={{ fontSize: 40 }}>{day}</Text>
+                          </Text>
+                        </TouchableOpacity>
+                      </View> */
                   })}
                 </ScrollView>
               </View>
@@ -447,35 +476,52 @@ const styles = StyleSheet.create({
   },
 
   daySidebar: {
-    width: 58,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 8,
+    position: "absolute",
+    zIndex: 2,
+    top: -10,
+    left: -10,
+    width: 120,
+    height: "100%",
   },
   daySidebarContent: {
-    gap: 10,
-    alignItems: "center",
+    alignItems: "baseline",
+  },
+  buttonContainer: {
+    position: "relative",
+    marginTop: 20,
+    marginBottom: 2,
+  },
+  shadowView: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    width: 86,
+    height: 76,
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.23)",
   },
   daySquare: {
-    width: 46,
-    height: 46,
+    width: 86,
+    height: 76,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "#EC4646",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-  },
-  daySquareActive: {
-    backgroundColor: "#f5b301",
-    borderColor: "#f5b301",
+    borderWidth: 6,
+    borderColor: "#F6F6F6",
   },
   daySquareLabel: {
-    fontSize: 9,
-    color: "rgba(255,255,255,0.7)",
+    fontSize: 20,
+    color: "#F6F6F6",
     fontWeight: "600",
     letterSpacing: 0.3,
     textTransform: "uppercase",
+    textAlign: "center",
+    fontFamily: "MilordBook",
+    marginTop: 10,
+    marginLeft: "auto",
+    marginRight: 20,
   },
   daySquareLabelActive: {
     color: "#1a1a1a",
@@ -496,7 +542,8 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 10,
     paddingBottom: 20,
-    paddingTop: 8,
+    paddingTop: 12,
+    paddingLeft: 50,
   },
   emptyText: {
     textAlign: "center",
